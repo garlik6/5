@@ -13,9 +13,6 @@ typedef struct node {  // двоичное дерево поиска с прош
 }node;
 
 
-typedef struct tree {
-    node *root;
-} tree;
 
 char *getstring() {
     char *ptr = (char *) malloc(1);
@@ -69,23 +66,18 @@ int getIntSmall(int *a,int e) {
 
 const char *msgs[] = {"0. Quit","1. Add","2. Find next","3. Delete ","4. Show", "5. Open file" , "6. Find"};
 
-int insert(tree *pTree, int key, char *info);
+int insert(node **root, int key, char *info);
 
-node* findTargetNode(tree *pTree, int key, int *pInt);
+node** findTargetNode(node **root, int key, int *pInt);
 
 void newNodeMem(node **pNode, char *info);
 
 int leORri(node *pNode, int key, node *pNode1);
 
 node* searchPar (node* ptr, int key);
-
-int leORri(node *pNode, int key, node *newNode);
-
-void newNodeMem(node **pNode,char *info);
-
 node *min(node *pNode);
 
-int show (tree * pTree);
+int show (node **root);
 
 const int  N = sizeof(msgs) / sizeof(msgs[0]);
 
@@ -104,14 +96,15 @@ int dialog()
         puts("Make your choice: -->");
 
         n = getIntSmall(&rc,2);
+
         if(n == 0)
             rc = 0;
     }while(rc < 0 || rc >= N);
     return rc;
 }
 
-int show (tree *pTree)
-{   node *ptr = min(pTree->root);
+int show (node **root)
+{   node *ptr = min(*root);
     while (ptr != 0)
     {
         printf("%d %s\n",ptr->key,ptr->info);
@@ -119,60 +112,59 @@ int show (tree *pTree)
     return 1;
 }
 
-int add (tree * pTree)
+int add (node **root)
 {   int key;
     char *info;
     printf("Enter key-->");
     getIntSmall(&key,2);
     printf("Enter info-->");
     info = getstring();
-    if(insert(pTree, key, info) == 1)
+    if(insert(root, key, info) == 1)
         printf("duplicate key");
 
 
     return 1;
 }
 
-int insert(tree *pTree, int key, char *info) {
+int insert(node ** root, int key, char *info) {
     int target;
-    node *newNode = NULL, *ptr, *prev, *buf;
+    node *newNode = NULL, *ptr = NULL, *prev = NULL, *buf = NULL;
     newNode = (node *) calloc(1,sizeof(node*));
-    if (pTree->root == NULL){
-        pTree->root = newNode;
-        pTree->root->key = key;
-        pTree->root->Left = NULL;
-        pTree->root->Right = NULL;
-        pTree->root->info = info;
-        pTree->root->Next = NULL;
+    if ((*root) == NULL){
+        (*root) = newNode;
+        key = key;
+        (*root)->Left = NULL;
+        (*root)->Right = NULL;
+        (*root)->info = info;
+        (*root)->Next = NULL;
         return 0;
     } else{
-        if(leORri(findTargetNode(pTree, key, &target), key, newNode) == 1)
+        if(leORri(findTargetNode(root, key, &target), key, newNode) == 1)
             return 1;
         newNode->key = key;
         newNode->info = info;
         newNode->Right = NULL;
         newNode->Left = NULL;
-        ptr = min(pTree->root);
-        if (key < ptr->key)
-            newNode->Next = ptr;
-        prev = pTree->root;
-        while(ptr->key > key){
-            prev = ptr;
-            ptr = ptr->Next;
-        }
-        if(prev->Next != NULL)
-            buf = prev->Next;
-        prev->Next = ptr;
-        if(prev->Next != NULL)
-            ptr->Next = buf;
+        newNode->Next = NULL;
+        ptr = min(*root);
+        //prev = pTree->root;
+//        while(ptr != NULL && ptr->key < key){
+//            prev = ptr;
+//            ptr = ptr->Next;
+//        }
+//        if(prev->Next != NULL)
+//            buf = prev->Next;
+//        prev->Next = ptr;
+//        if(prev->Next != NULL)
+//            ptr->Next = buf;
         return 0;
     }
 }
 
 
 
-node* findTargetNode(tree *pTree, int key, int *pInt) {
-    node *ptr = pTree->root;
+node** findTargetNode( node **root, int key, int *pInt) {
+    node *ptr = *root;
     node *par = NULL;
     while (ptr!=NULL){
         par = ptr;
@@ -184,14 +176,7 @@ node* findTargetNode(tree *pTree, int key, int *pInt) {
     return par;
 }
 
-int leORri(node *pNode, int key, node *newNode) {
-    if (pNode->key==key)
-        return 1;
-    if(key < pNode->key)
-        pNode->Left = newNode;
-    else
-        pNode->Right = newNode;
-}
+int leORri(node **pNode, int key, node *newNode);
 
 
 node *searchNext(node* x, node *par, node* root){
@@ -253,13 +238,22 @@ node *min(node *pNode) {
     }
 }
 
+int leORri(node **pNode, int key, node *newNode) {
+    if ((*pNode)->key==key)
+        return 1;
+    if(key < (*pNode)->key)
+        (*pNode)->Left = newNode;
+    else
+        (*pNode)->Right = newNode;
+}
+
 int main() {
-    int (*fptr[])(tree *) = {NULL, add, show};//, //findNext, delete ,show, openFile, find}; //,find,delete,show
-    tree *pTree = (tree *)calloc(1,sizeof(tree*));
-    //pTree->root = (node *)calloc(1,sizeof(node*));
+    int (*fptr[])(node **) = {NULL, add, show};//, //findNext, delete ,show, openFile, find}; //,find,delete,show
+
+    node *root = NULL;
     int rc;
     while(rc = dialog())
-        if(!fptr[rc](pTree))
+        if(!fptr[rc](&root))
             break;
     //saveFile(&table);
     printf("Thanks");
