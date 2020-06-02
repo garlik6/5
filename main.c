@@ -12,7 +12,27 @@ typedef struct node {  // двоичное дерево поиска с прош
      char* info ;
 }node;
 
-
+int StrToInt(char *s)
+{
+    int temp = 0; // число
+    int i = 0;
+    int sign = 0; // знак числа 0- положительное, 1 — отрицательное
+    if (s[i] == '-')
+    {
+        sign = 1;
+        i++;
+    }
+    while (s[i] >= 0x30 && s[i] <= 0x39)
+    {
+        temp = temp + (s[i] & 0x0F);
+        temp = temp * 10;
+        i++;
+    }
+    temp = temp / 10;
+    if (sign == 1)
+        temp = -temp;
+    return(temp);
+}
 
 char *getstring() {
     char *ptr = (char *) malloc(1);
@@ -64,7 +84,7 @@ int getIntSmall(int *a,int e) {
     }
 }
 
-const char *msgs[] = {"0. Quit","1. Add","2. Find next","3. Delete ","4. Show", "5. Open file" , "6. Find"};
+const char *msgs[] = {"0. Quit","1. Add","2. Find next","3. Delete ","4. Show", "5. Open file" , "6. Find" , "7. Time"};
 
 int insert(node **root, int key, char *info);
 
@@ -72,12 +92,21 @@ node** findTargetNode(node **root, int key, int *pInt);
 
 void newNodeMem(node **pNode, char *info);
 
-int leORri(node *pNode, int key, node *pNode1);
+int leORri(node **pNode, int key, node *pNode1);
+
+int find(node** pNode);
 
 node* searchPar (node* ptr, int key);
+
 node *min(node *pNode);
 
 int show (node **root);
+
+int erase(node **tr, int num, node* parent, node**root);
+
+int delTree(node **pNode);
+
+int Time();
 
 const int  N = sizeof(msgs) / sizeof(msgs[0]);
 
@@ -105,61 +134,100 @@ int dialog()
 
 int show (node **root)
 {   node *ptr = min(*root);
-    while (ptr != 0)
+    while (ptr != NULL)
     {
         printf("%d %s\n",ptr->key,ptr->info);
+        ptr = ptr->Next;
     }
     return 1;
 }
 
 int add (node **root)
-{   int key;
+{   int key, rc;
     char *info;
     printf("Enter key-->");
     getIntSmall(&key,2);
     printf("Enter info-->");
     info = getstring();
-    if(insert(root, key, info) == 1)
+    rc = insert(root, key, info);
+    if(rc == 0)
         printf("duplicate key");
-
-
     return 1;
 }
 
 int insert(node ** root, int key, char *info) {
     int target;
     node *newNode = NULL, *ptr = NULL, *prev = NULL, *buf = NULL;
-    newNode = (node *) calloc(1,sizeof(node*));
+    newNode = (node *) malloc(sizeof(node));
     if ((*root) == NULL){
+        newNode->key = key;
+        newNode->Left = NULL;
+        newNode->Right = NULL;
+        newNode->info = info;
+        newNode->Next = NULL;
         (*root) = newNode;
-        key = key;
-        (*root)->Left = NULL;
-        (*root)->Right = NULL;
-        (*root)->info = info;
-        (*root)->Next = NULL;
-        return 0;
+        return 1;
     } else{
-        if(leORri(findTargetNode(root, key, &target), key, newNode) == 1)
+        node **jog = findTargetNode(root, key, &target);
+        if(jog == NULL)
             return 1;
+        ptr = min(*root);
+        if(leORri(jog, key, newNode) == 1)
+            return 0;
         newNode->key = key;
         newNode->info = info;
         newNode->Right = NULL;
         newNode->Left = NULL;
         newNode->Next = NULL;
-        ptr = min(*root);
-        //prev = pTree->root;
-//        while(ptr != NULL && ptr->key < key){
-//            prev = ptr;
-//            ptr = ptr->Next;
-//        }
-//        if(prev->Next != NULL)
-//            buf = prev->Next;
-//        prev->Next = ptr;
-//        if(prev->Next != NULL)
-//            ptr->Next = buf;
-        return 0;
+
+        prev = ptr;
+        int flag = 0;
+        while(ptr != NULL && ptr->key <= key){
+            prev = ptr;
+            ptr = ptr->Next;
+            flag++;
+        }
+        if (flag == 0)
+        {
+            newNode->Next = ptr;
+        } else {
+   //         if (prev->Next != NULL)
+   //            buf = prev->Next;
+            prev->Next = newNode;
+            newNode->Next = ptr;
+ //           if (ptr!= NULL)
+ //               ptr->Next = buf;
+            return 1;
+        }return 1;
     }
 }
+
+int insertt(node ** root, int key, char *info) {
+    int target;
+    node *newNode = NULL, *ptr = NULL, *prev = NULL, *buf = NULL;
+    newNode = (node *) malloc(sizeof(node));
+    if ((*root) == NULL){
+        newNode->key = key;
+        newNode->Left = NULL;
+        newNode->Right = NULL;
+        newNode->info = info;
+        newNode->Next = NULL;
+        (*root) = newNode;
+        return 1;
+    } else{
+        node **jog = findTargetNode(root, key, &target);
+        if(jog == NULL)
+            return 1;
+        ptr = min(*root);
+        if(leORri(jog, key, newNode) == 1)
+            return 0;
+        newNode->key = key;
+        newNode->info = info;
+        newNode->Right = NULL;
+        newNode->Left = NULL;
+        newNode->Next = NULL;
+        }return 1;
+    }
 
 
 
@@ -168,32 +236,17 @@ node** findTargetNode( node **root, int key, int *pInt) {
     node *par = NULL;
     while (ptr!=NULL){
         par = ptr;
+        if (ptr->key == key)
+            return NULL;
         if (key < ptr->key)
             ptr = ptr->Left;
         else
             ptr = ptr->Right;
     }
-    return par;
+    node** pPar=&par;
+    return pPar;
 }
 
-int leORri(node **pNode, int key, node *newNode);
-
-
-node *searchNext(node* x, node *par, node* root){
-    node * left, *right, *ptr;
-    ptr = x;
-    if (ptr->Right != NULL) {
-        ptr = min(ptr);
-        return ptr;
-    } else
-        ptr = par;
-    while (ptr != NULL && ptr->Right == x)
-    {
-        x = ptr;
-        ptr = searchPar(root, x->key);
-    }
-    return ptr;
-}
 
 node* search (node* ptr, int key){
     if (ptr == NULL)
@@ -202,13 +255,26 @@ node* search (node* ptr, int key){
     {
         while (ptr->key != key)
 
-            if (key< ptr->key)
+            if (key > ptr->key) {
                 ptr = ptr->Right;
-            else
+                if (ptr == NULL) return ptr;
+            }
+            else {
                 ptr = ptr->Left;
-        return ptr;
+                if (ptr == NULL) return ptr;
+            }
     }
 
+}
+
+int searchKey(node *ptr, int key)
+{
+  node *Ptr;
+    Ptr= search (ptr,key);
+    if (Ptr != NULL)
+        return 1;
+    else
+        return 0;
 }
 
 node* searchPar (node* ptr, int key){
@@ -217,12 +283,13 @@ node* searchPar (node* ptr, int key){
         return NULL;
     else
     {
-        while (ptr->key != key)
+        while (ptr->key != key) {
             par = ptr;
-            if (key< ptr->key)
+            if (key < ptr->key)
                 ptr = ptr->Right;
             else
                 ptr = ptr->Left;
+        }
         return par;
     }
 
@@ -238,6 +305,16 @@ node *min(node *pNode) {
     }
 }
 
+node *max (node *pNode) {
+    node *ptr = pNode;
+    if (pNode == NULL)
+        return NULL;
+    else {
+        while (ptr->Left != NULL)
+            ptr = ptr->Right;
+        return ptr;
+    }
+}
 int leORri(node **pNode, int key, node *newNode) {
     if ((*pNode)->key==key)
         return 1;
@@ -245,15 +322,246 @@ int leORri(node **pNode, int key, node *newNode) {
         (*pNode)->Left = newNode;
     else
         (*pNode)->Right = newNode;
+    return 0;
+}
+
+int find(node** pNode){
+
+      int key;
+      node *rc;
+        char *info;
+        printf("Enter key-->");
+        getIntSmall(&key,2);
+        rc = search(*pNode,key);
+        if(rc == NULL) {
+            printf("Not found");
+        }else
+        {
+            printf("%d %s",rc->key,rc->info);
+        }
+
+
+        return 1;
+
+}
+int findNext(node** pNode)
+{ int key;
+    node *rc;
+    char *info;
+    printf("Enter key-->");
+    getIntSmall(&key,2);
+    rc = search(*pNode,key);
+
+    if(rc==NULL || rc->Next == NULL) {
+        printf("Not found");
+    }else
+    {
+        printf("Next:-->%d %s",rc->Next->key,rc->Next->info);
+    }
+
+    return 1;
+}
+
+int delete (node** root){
+    int key;
+    node *rc;
+    int flag;
+    char *info;
+    printf("Enter key-->");
+    getIntSmall(&key,2);
+
+    flag = erase(root, key, NULL,root);
+
+
+    return 1;
+}
+
+//int erase(node* dI, node** root)
+//{int flag;
+//    node *parent = searchPar(*root, dI->key);
+//    if (dI->Left && dI->Right) {
+//        node *localMax = max(dI->Left);
+//        dI->info = localMax->info;
+//        erase(localMax, root);
+//        return 0;
+//    } else if (dI->Left) {
+//        if (dI == parent->Left) {
+//            parent->Left = dI->Left;
+//        } else {
+//            parent->Right = dI->Left;
+//        }
+//    } else if (dI->Right) {
+//        if (dI == parent->Right) {
+//            parent->Right = dI->Right;
+//        } else {
+//            parent->Left = dI->Right;
+//        }
+//    } else {
+//        if (dI == parent->Left) {
+//            parent->Left = NULL;
+//        } else {
+//           parent->Right = NULL;
+//        }
+//    }
+//    free(dI);
+//}
+
+node * minimum(node *tr)
+{
+    if (!tr->Left->Left) return tr;
+    return minimum(tr->Left);
+}
+node * findPrev (node** root,node* tr)
+{ node * cur = min(*root), *prev;
+    while (cur!=NULL)
+    {
+        prev = cur;
+        cur = cur->Next;
+        if (cur == tr)
+            break;
+    }
+    return prev;
+}
+int erase(node **tr, int num, node* parent, node ** root)
+{   node * prev;
+    if (!(*tr)) return 0;
+
+    if (num < (*tr)->key)
+        erase(&((*tr)->Left), num, *tr, root);
+
+    else if (num > (*tr)->key)
+        erase(&((*tr)->Right), num, *tr, root);
+    else {
+
+        if (!(*tr)->Left && !(*tr)->Right) {//Если детей у удаляемого узла нет, то перед нами самый простой случай - листовой узел.
+
+            if (parent) {//Родителю данного узла надо сообщить о том, что потомка у него теперь нет
+
+                if (parent->Left) {
+
+                    if (parent->Left->key == (*tr)->key) { //Если удаляется левый потомок
+                        prev = findPrev(root,*tr);
+                        prev->Next = parent;
+                        free((*tr)->info);
+                        free(*tr);
+                        parent->Left = NULL;
+                    }
+                }  if(parent->Right) {
+
+                    if (*tr!=NULL && parent->Right->key == (*tr)->key) { //Если удаляется правый потомок
+
+                        parent->Next = (*tr)->Next;
+                        free((*tr)->info);
+                        free(*tr);
+                        parent->Right = NULL;
+                    }
+                }
+            }
+
+           // Теперь можно освободить память
+            *tr = NULL;
+        } else if (!(*tr)->Left || !(*tr)->Right) { // Если у удаляемой вершины есть  один потомок
+
+            node* nodeToRemove = NULL;
+            if ((*tr)->Left) { //Находим того самого единственного потомка удаляемой вершины
+
+                nodeToRemove = (*tr)->Left;
+
+            } else {
+
+                nodeToRemove = (*tr)->Right;
+            }
+            //Скопировать все данные из единственного потомка удаляемой вершины
+            (*tr)->Left = nodeToRemove->Left;
+            (*tr)->Right = nodeToRemove->Right;
+            (*tr)->key = nodeToRemove->key;
+            (*tr)->info = nodeToRemove->info;
+            //Освободить память, выделенную ранее для данного потомка
+            nodeToRemove->info = "\0";
+            free(nodeToRemove);
+        } else { //Если у удаляемой вершины есть оба потомка, то согласно алгоритму необходимо найти наименьший элемент в правом поддереве удаляемого элемента
+
+            if (!(*tr)->Right->Left) { //Если у правого поддерева нет левых потомков, то это означает, что у всех потомков значение ключа больше, а значит надо просто скопировать значения из правого потомка в удаляемый элемент
+
+                (*tr)->key = (*tr)->Right->key;
+                (*tr)->info = (*tr)->Right->info;// Скопировать значение из правого потомка
+                node* rightRIghtChild = (*tr)->Right->Right;
+                free((*tr)->Right); // Освбодить память, выделенную для правого потомка
+                (*tr)->Right = rightRIghtChild;
+            } else {
+
+                node* minNodeParent = minimum((*tr)->Right); //Поиск наименьшего элемента в правом поддереве (он обязательно найдётся, случай когда его нет был разобран выше)
+                (*tr)->key = minNodeParent->Left->key;//Скопировать значение из наименьшего жлемента в правом поддереве в удаляемый элемент
+                (*tr)->info = minNodeParent->Left->info;
+                free(minNodeParent->Left);
+                minNodeParent->Left = NULL;
+            }
+        }
+    }
+}
+
+int openFile (node** root){
+    FILE *fd;
+    int key;
+    char * flag = 1;
+    fd = fopen("C:\\Users\\Grigory\\CLionProjects\\untitled18\\File","r");
+    if (fd == NULL) {
+        printf("Файл с таким именем не найден \n Создание нового...");
+        return 1;
+    }
+    while (1){
+            char *info = (char *) calloc(128,sizeof(char));
+            flag = fgets(info,128,fd);
+            if(!flag)
+                break;
+            key = StrToInt(info);
+            fgets(info,127,fd);
+            insert(root,key,info);
+
+        }
+    return 1;
+}
+
+int Time()
+{
+    node **root =(node **) calloc(1,sizeof(node*));
+    int n =50, key[100000], k, cnt = 1000000, i, m;
+    clock_t first, last;
+    srand(time(NULL));
+    while (n-- > 0){
+        for (i=0; i < 100000; ++i)
+            key[i] = rand()*rand();
+        for (i = 0;i<cnt;){
+            k = rand()*rand();
+            if(insertt(root,k,""))
+                i++;
+
+        }
+        m = 0;
+        first = clock();
+        for(i = 0; i < 100000; i++)
+           if(searchKey(*root, key[i])!=0)
+               ++m;
+        last = clock();
+        printf("%d items was found\n", m);
+        printf("test #%d, number of nodes = %d, time = %d\n", 50-n, (50 - n)*cnt, last - first);
+    }
+    delTree(root);
+    return 1;
+
+}
+
+int delTree(node **pNode) {
+    return 1;
 }
 
 int main() {
-    int (*fptr[])(node **) = {NULL, add, show};//, //findNext, delete ,show, openFile, find}; //,find,delete,show
+    int (*fptr[])(node **) = {NULL, add, findNext, delete, show, openFile, find, Time};// delete openFile
 
-    node *root = NULL;
+    node **root = calloc(1,sizeof(node*));
     int rc;
     while(rc = dialog())
-        if(!fptr[rc](&root))
+        if(!fptr[rc](root))
             break;
     //saveFile(&table);
     printf("Thanks");
