@@ -83,8 +83,11 @@ int getIntSmall(int *a,int e) {
         return 1;
     }
 }
-
-const char *msgs[] = {"0. Quit","1. Add","2. Find next","3. Delete ","4. Show", "5. Open file" , "6. Find" , "7. Time"};
+int delittest(node**root)
+{
+    int a [14] = {};
+}
+const char *msgs[] = {"0. Quit","1. Add","2. Find next","3. Delete ","4. Show", "5. Open file" , "6. Find" , "7. Time" , "8. Print tree"};
 
 int insert(node **root, int key, char *info);
 
@@ -107,6 +110,8 @@ int erase(node **tr, int num, node* parent, node**root);
 int delTree(node **pNode);
 
 int Time();
+
+int checkDel(node** root, long a[]);
 
 const int  N = sizeof(msgs) / sizeof(msgs[0]);
 
@@ -202,6 +207,15 @@ int insert(node ** root, int key, char *info) {
     }
 }
 
+int chek(node** root)
+{
+
+}
+
+int checkDel(node** root, long a[])
+{
+    return 1;
+}
 int insertt(node ** root, int key, char *info) {
     int target;
     node *newNode = NULL, *ptr = NULL, *prev = NULL, *buf = NULL;
@@ -264,7 +278,7 @@ node* search (node* ptr, int key){
                 if (ptr == NULL) return ptr;
             }
     }
-
+ return ptr;
 }
 
 int searchKey(node *ptr, int key)
@@ -310,7 +324,7 @@ node *max (node *pNode) {
     if (pNode == NULL)
         return NULL;
     else {
-        while (ptr->Left != NULL)
+        while (ptr->Right!= NULL)
             ptr = ptr->Right;
         return ptr;
     }
@@ -411,19 +425,28 @@ node * minimum(node *tr)
     if (!tr->Left->Left) return tr;
     return minimum(tr->Left);
 }
+int delTree(node **pNode) {
+
+    return 1;
+}
 node * findPrev (node** root,node* tr)
 { node * cur = min(*root), *prev;
+  //if (!(tr)->Left && !tr->Right)
+    //  return NULL;
+  if(tr->Next == cur)
+      return 0;
     while (cur!=NULL)
     {
         prev = cur;
         cur = cur->Next;
         if (cur == tr)
-            break;
+            return prev;
+
     }
-    return prev;
+    return NULL;
 }
 int erase(node **tr, int num, node* parent, node ** root)
-{   node * prev;
+{   node * prev = NULL;
     if (!(*tr)) return 0;
 
     if (num < (*tr)->key)
@@ -441,16 +464,19 @@ int erase(node **tr, int num, node* parent, node ** root)
 
                     if (parent->Left->key == (*tr)->key) { //Если удаляется левый потомок
                         prev = findPrev(root,*tr);
-                        prev->Next = parent;
+                        if(prev)
+                            prev->Next = parent;
                         free((*tr)->info);
                         free(*tr);
-                        parent->Left = NULL;
+                        if(parent)
+                            parent->Left = NULL;
                     }
                 }  if(parent->Right) {
 
                     if (*tr!=NULL && parent->Right->key == (*tr)->key) { //Если удаляется правый потомок
 
-                        parent->Next = (*tr)->Next;
+                        if(parent)
+                            parent->Next = (*tr)->Next;
                         free((*tr)->info);
                         free(*tr);
                         parent->Right = NULL;
@@ -466,34 +492,81 @@ int erase(node **tr, int num, node* parent, node ** root)
             if ((*tr)->Left) { //Находим того самого единственного потомка удаляемой вершины
 
                 nodeToRemove = (*tr)->Left;
+                if((*tr) != min(*root)) {
+                    if(nodeToRemove->Left) {
+                        prev = max(nodeToRemove->Left);
+                        if(prev)
+                            prev->Next = *tr;
+                        prev = max((*tr)->Left);
+                        if(prev)
+                            prev->Next = (*tr)->Next;
+                        (*tr)->Next = nodeToRemove->Next;
+//                        if (*tr == parent->Right)
+//                            parent->Next = min((*tr)->Left);
 
+                    }
+                    else if(nodeToRemove->Right) {
+                        prev = max(nodeToRemove->Right);
+                        if(prev)
+                            prev->Next = *tr;
+                        prev = max((*tr)->Left);
+                        if(prev)
+                            prev->Next = (*tr)->Next;
+                        (*tr)->Next = nodeToRemove->Next;
+                        prev = findPrev(root, min(nodeToRemove));
+                        if(prev)
+                            prev->Next = *tr;
+                    }
+                    else if(!nodeToRemove->Right && !nodeToRemove->Left) {
+                        prev = findPrev(root, nodeToRemove);
+                        if(prev)
+                            prev->Next = *tr;
+                    }
+                }
             } else {
-
                 nodeToRemove = (*tr)->Right;
+                if(parent && parent->Right == *tr)parent->Next = (*tr)->Next;
+                if((*tr)!=min(*root))
+                    prev = findPrev(root,nodeToRemove);
+                if(prev)
+                    prev->Next = (*tr);
+                (*tr)->Next = nodeToRemove->Next;
+
+
+
             }
             //Скопировать все данные из единственного потомка удаляемой вершины
             (*tr)->Left = nodeToRemove->Left;
             (*tr)->Right = nodeToRemove->Right;
             (*tr)->key = nodeToRemove->key;
+            free((*tr)->info);
             (*tr)->info = nodeToRemove->info;
+
+           // (*tr)->Next = nodeToRemove->Next;
             //Освободить память, выделенную ранее для данного потомка
-            nodeToRemove->info = "\0";
             free(nodeToRemove);
         } else { //Если у удаляемой вершины есть оба потомка, то согласно алгоритму необходимо найти наименьший элемент в правом поддереве удаляемого элемента
 
             if (!(*tr)->Right->Left) { //Если у правого поддерева нет левых потомков, то это означает, что у всех потомков значение ключа больше, а значит надо просто скопировать значения из правого потомка в удаляемый элемент
 
                 (*tr)->key = (*tr)->Right->key;
+                free((*tr)->info);
                 (*tr)->info = (*tr)->Right->info;// Скопировать значение из правого потомка
                 node* rightRIghtChild = (*tr)->Right->Right;
+                (*tr)->Next = (*tr)->Right->Next;
                 free((*tr)->Right); // Освбодить память, выделенную для правого потомка
+                printf("deleted");
                 (*tr)->Right = rightRIghtChild;
             } else {
 
                 node* minNodeParent = minimum((*tr)->Right); //Поиск наименьшего элемента в правом поддереве (он обязательно найдётся, случай когда его нет был разобран выше)
+
                 (*tr)->key = minNodeParent->Left->key;//Скопировать значение из наименьшего жлемента в правом поддереве в удаляемый элемент
+                free((*tr)->info);
                 (*tr)->info = minNodeParent->Left->info;
+                (*tr)->Next = minNodeParent;
                 free(minNodeParent->Left);
+                printf("deleted");
                 minNodeParent->Left = NULL;
             }
         }
@@ -505,10 +578,6 @@ int openFile (node** root){
     int key;
     char * flag = 1;
     fd = fopen("C:\\Users\\Grigory\\CLionProjects\\untitled18\\File","r");
-    if (fd == NULL) {
-        printf("Файл с таким именем не найден \n Создание нового...");
-        return 1;
-    }
     while (1){
             char *info = (char *) calloc(128,sizeof(char));
             flag = fgets(info,128,fd);
@@ -546,17 +615,33 @@ int Time()
         printf("%d items was found\n", m);
         printf("test #%d, number of nodes = %d, time = %d\n", 50-n, (50 - n)*cnt, last - first);
     }
-    delTree(root);
+    delTree(*root);
     return 1;
 
 }
 
-int delTree(node **pNode) {
+void print_Tree(node * p,int level)
+{
+    if(p)
+    {
+        print_Tree(p->Right,level + 1);
+        for(int i = 0;i< level;i++) printf("   ");
+        if(p->Next)
+            printf("%d(%d)\n",p->key,p->Next->key);
+        else
+            printf("%d)\n",p->key);
+        print_Tree(p->Left,level + 1);
+    }
+}
+int print(node** root)
+{
+    print_Tree(*root,0);
     return 1;
 }
+
 
 int main() {
-    int (*fptr[])(node **) = {NULL, add, findNext, delete, show, openFile, find, Time};// delete openFile
+    int (*fptr[])(node **) = {NULL, add, findNext, delete, show, openFile, find, Time, print};// delete openFile
 
     node **root = calloc(1,sizeof(node*));
     int rc;
@@ -565,6 +650,6 @@ int main() {
             break;
     //saveFile(&table);
     printf("Thanks");
-//    delTable(&table);
+    delTree(*root);
     return 0;
 }
